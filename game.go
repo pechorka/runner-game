@@ -65,7 +65,7 @@ const (
 )
 
 func (gs *gameState) update() {
-	if rl.IsKeyPressed(rl.KeyR) {
+	if rl.IsKeyPressed(rl.KeyR) || (gs.screen == gameScreenGameOver && rl.IsKeyPressed(rl.KeySpace)) {
 		*gs = *newGameState()
 		return
 	}
