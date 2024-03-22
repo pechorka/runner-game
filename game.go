@@ -235,6 +235,7 @@ type player struct {
 	verticalSpeed    float32
 	// can't rely on verticalPosition == 0 because it will > 0 while player is decending
 	jumping    bool
+	jumpStartY float32
 	onPlatform bool
 	border     rl.Rectangle
 	dead       bool
@@ -296,6 +297,7 @@ func (p *player) updateVerticalPosition(
 		((!p.jumping && p.verticalPosition == 0) || // player on the ground and space pressed -> jump
 			p.onPlatform) { // player on the platform and space pressed -> jump
 		p.jumping = true
+		p.jumpStartY = p.verticalPosition
 	}
 	// player is jumping and space released -> start descending
 	if !isSpacePressed && p.jumping {
@@ -308,7 +310,7 @@ func (p *player) updateVerticalPosition(
 		p.verticalPosition -= p.verticalSpeed
 	}
 
-	maxJumpHeight := cs.screenHeight * playerMaxJumpHeightScreenPercent
+	maxJumpHeight := cs.screenHeight*playerMaxJumpHeightScreenPercent + p.jumpStartY
 	p.verticalPosition = rl.Clamp(p.verticalPosition, 0, maxJumpHeight)
 
 	// player reached max jump height -> start descending
