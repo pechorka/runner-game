@@ -15,8 +15,8 @@ const (
 	holeSpeed     float32 = 10
 	maxHoleCount  int     = 10
 
-	holeMinWidthScreenPercent float32 = 0.05
-	holeMaxWidthScreenPercent float32 = 0.1
+	holeMinWidthScreenPercent float32 = 0.1
+	holeMaxWidthScreenPercent float32 = 0.2
 )
 
 const (
@@ -34,7 +34,7 @@ const (
 	playerHeightScreenPercent        float32 = 0.1
 	playerLeftMarginScreenPercent    float32 = 0.2
 
-	playerInitialVerticalSpeed float32 = 3
+	playerInitialVerticalSpeed float32 = 6
 )
 
 type gameState struct {
@@ -250,8 +250,11 @@ func (p *player) update(cs commonState, groundBorders rl.Rectangle, platformBord
 	p.updateBorder(cs, groundBorders)
 	p.updateVerticalPosition(cs, platformBorders)
 	if p.verticalPosition == 0 {
+		playerMiddle := (p.border.X + p.border.Width) / 2
 		for _, holeBorder := range holeBorders {
-			if rlutils.VerticalCollision(p.border, holeBorder) {
+			if rlutils.VerticalCollision(p.border, holeBorder) &&
+				// player is inside the hole more than half
+				(holeBorder.X <= playerMiddle && playerMiddle <= holeBorder.X+holeBorder.Width) {
 				p.dead = true
 				break
 			}
