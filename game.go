@@ -284,10 +284,8 @@ func (p *player) updateVerticalPosition(
 			// player above platform
 			if p.border.Y+p.border.Height < platformBorder.Y+platformBorder.Height {
 				p.onPlatform = true
+				break
 			}
-			p.jumping = false
-
-			break
 		}
 	}
 
