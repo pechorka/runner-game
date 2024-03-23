@@ -14,8 +14,8 @@ import (
 // TODO: add animated assets for player and enemy and ingredients
 
 const (
-	holeSpawnRate float32 = 1
-	holeSpeed     float32 = 10
+	holeSpawnRate float32 = 3
+	holeSpeed     float32 = 600
 	maxHoleCount  int     = 10
 
 	holeMinWidth = 200
@@ -23,8 +23,8 @@ const (
 )
 
 const (
-	platformSpawnRate float32 = 2
-	platformSpeed     float32 = 10
+	platformSpawnRate float32 = 2 * holeSpawnRate
+	platformSpeed     float32 = holeSpeed
 	maxPlatformCount  int     = 10
 
 	platformMinWidth = 200
@@ -35,13 +35,13 @@ const (
 	playerMaxJumpHeightScreenPercent float32 = 0.2
 	playerLeftMarginScreenPercent    float32 = 0.2
 
-	playerInitialVerticalSpeed float32 = 6
+	playerInitialVerticalSpeed float32 = holeSpeed
 )
 
 const (
 	maxCollectibleCount  = 40
 	collectibleSpeed     = platformSpeed
-	collectibleSpawnRate = 0.5
+	collectibleSpawnRate = holeSpawnRate / 2
 )
 
 type gameState struct {
@@ -210,7 +210,7 @@ func (h *holes) updateHoles(cs commonState, groundBorders rl.Rectangle) {
 
 	for i := range h.borders {
 		holeBorder := &h.borders[i]
-		holeBorder.X -= holeSpeed
+		holeBorder.X -= holeSpeed * cs.dt
 
 		holeNotVisible := holeBorder.X+holeBorder.Width < 0
 
@@ -252,7 +252,7 @@ func (p *platforms) updatePlatforms(cs commonState, groundBorders rl.Rectangle, 
 
 	for i := range p.borders {
 		platformBorder := &p.borders[i]
-		platformBorder.X -= platformSpeed
+		platformBorder.X -= platformSpeed * cs.dt
 
 		platformNotVisible := platformBorder.X+platformBorder.Width < 0
 
@@ -311,7 +311,7 @@ func (c *collectibles) updateCollectibles(cs commonState, groundBorders rl.Recta
 
 	for i := range c.borders {
 		collectibleBorder := &c.borders[i]
-		collectibleBorder.X -= collectibleSpeed
+		collectibleBorder.X -= collectibleSpeed * cs.dt
 
 		collectibleNotVisible := collectibleBorder.X+collectibleBorder.Width < 0
 
@@ -404,9 +404,9 @@ func (p *player) updateVerticalPosition(
 	}
 
 	if p.jumping {
-		p.verticalPosition += p.verticalSpeed
+		p.verticalPosition += p.verticalSpeed * cs.dt
 	} else if !p.onPlatform {
-		p.verticalPosition -= p.verticalSpeed
+		p.verticalPosition -= p.verticalSpeed * cs.dt
 	}
 
 	maxJumpHeight := cs.screenHeight*playerMaxJumpHeightScreenPercent + p.jumpStartY
