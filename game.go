@@ -142,6 +142,10 @@ func (gs *gameState) draw() {
 		gs.player.draw()
 	case gameScreenGameOver:
 		gs.drawGameOver()
+		gs.ground.draw()
+		gs.platforms.draw()
+		gs.collectibles.draw()
+		gs.player.draw()
 	case gameScreenWin:
 		panic("not implemented")
 	}
