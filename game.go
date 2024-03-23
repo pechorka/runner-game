@@ -19,8 +19,8 @@ const (
 	holeSpeed     float32 = 10
 	maxHoleCount  int     = 10
 
-	holeMinWidthScreenPercent float32 = 0.1
-	holeMaxWidthScreenPercent float32 = 0.2
+	holeMinWidth = 200
+	holeMaxWidth = 400
 )
 
 const (
@@ -28,8 +28,8 @@ const (
 	platformSpeed     float32 = 10
 	maxPlatformCount  int     = 10
 
-	platformWidthScreenPercentFrom float32 = 0.2
-	platformWidthScreenPercentTo   float32 = 0.3
+	platformMinWidth = 200
+	platformMaxWidth = 400
 )
 
 const (
@@ -218,8 +218,6 @@ func (h *holes) updateHoles(cs commonState, groundBorders rl.Rectangle) {
 		if holeNotVisible && h.spawnTimer >= holeSpawnRate {
 			h.spawnTimer = 0
 
-			holeMinWidth := cs.screenWidth * holeMinWidthScreenPercent
-			holeMaxWidth := cs.screenWidth * holeMaxWidthScreenPercent
 			holeWidth := random.Float32(holeMinWidth, holeMaxWidth)
 
 			holeBorder.X = cs.screenWidth + holeWidth
@@ -262,8 +260,6 @@ func (p *platforms) updatePlatforms(cs commonState, groundBorders rl.Rectangle, 
 		if platformNotVisible && p.spawnTimer >= platformSpawnRate {
 			p.spawnTimer = 0
 
-			platformMinWidth := cs.screenWidth * platformWidthScreenPercentFrom
-			platformMaxWidth := cs.screenWidth * platformWidthScreenPercentTo
 			platformWidth := random.Float32(platformMinWidth, platformMaxWidth)
 
 			playerMaxJumpHeight := cs.screenHeight * playerMaxJumpHeightScreenPercent
