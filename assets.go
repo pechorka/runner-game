@@ -10,6 +10,8 @@ type assets struct {
 	platform     platformAssets
 	collectibles collectibleAssets
 
+	music rl.Music
+
 	allTextures []rl.Texture2D
 }
 
@@ -50,6 +52,8 @@ func loadAssets() assets {
 
 	a.collectibles.ingredient = a.loadTexture("assets/collectibles/tile_coin.png")
 
+	a.music = rl.LoadMusicStream("assets/music/I Got a Stick Arr Bryan Teoh.mp3")
+
 	return a
 }
 
@@ -63,4 +67,5 @@ func (a *assets) unload() {
 	for _, t := range a.allTextures {
 		rl.UnloadTexture(t)
 	}
+	rl.UnloadMusicStream(a.music)
 }

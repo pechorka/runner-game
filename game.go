@@ -55,6 +55,8 @@ type gameState struct {
 	platforms    platforms
 	collectibles collectibles
 	player       player
+
+	musicPlaying bool
 }
 
 func newGameState(assets assets) *gameState {
@@ -87,6 +89,12 @@ func (gs *gameState) update() {
 	case gameScreenMenu:
 		panic("not implemented")
 	case gameScreenGame:
+		if !gs.musicPlaying {
+			rl.PlayMusicStream(gs.assets.music)
+			gs.musicPlaying = true
+		} else {
+			rl.UpdateMusicStream(gs.assets.music)
+		}
 		gs.commonState.update()
 		gs.ground.update(gs.commonState)
 		gs.platforms.updatePlatforms(gs.commonState, gs.ground.border, gs.player.border.Height)
@@ -96,7 +104,8 @@ func (gs *gameState) update() {
 			gs.screen = gameScreenGameOver
 		}
 	case gameScreenGameOver:
-		// do nothing
+		rl.StopMusicStream(gs.assets.music)
+		gs.musicPlaying = false
 	case gameScreenWin:
 		panic("not implemented")
 	}

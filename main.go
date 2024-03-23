@@ -10,6 +10,8 @@ func main() {
 	rl.InitWindow(16*factor, 9*factor, "Bread game jam")
 	rl.SetTargetFPS(60)
 
+	rl.InitAudioDevice()
+
 	assets := loadAssets()
 	gs := newGameState(assets)
 
@@ -22,6 +24,7 @@ func main() {
 		rl.EndDrawing()
 	}
 
+	rl.CloseAudioDevice()
 	assets.unload()
 	rl.CloseWindow()
 }
