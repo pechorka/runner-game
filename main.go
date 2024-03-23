@@ -10,7 +10,8 @@ func main() {
 	rl.InitWindow(16*factor, 9*factor, "Bread game jam")
 	rl.SetTargetFPS(60)
 
-	gs := newGameState()
+	assets := loadAssets()
+	gs := newGameState(assets)
 
 	for !rl.WindowShouldClose() {
 		rl.BeginDrawing()
@@ -21,5 +22,6 @@ func main() {
 		rl.EndDrawing()
 	}
 
+	assets.unload()
 	rl.CloseWindow()
 }

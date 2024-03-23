@@ -6,6 +6,12 @@ import (
 	"github.com/pechorka/bread-game-jam/pkg/rlutils"
 )
 
+// TODO: spawn ingredients on platforms and ground
+// TODO: score
+// TODO: enemy. More frequent attacks on higher score (more ingredients)
+// TODO: add sounds and music
+// TODO: add animated assets for player and enemy and ingredients
+
 const (
 	groundHeightPercent float32 = 0.2
 )
@@ -31,7 +37,6 @@ const (
 
 const (
 	playerMaxJumpHeightScreenPercent float32 = 0.2
-	playerHeightScreenPercent        float32 = 0.1
 	playerLeftMarginScreenPercent    float32 = 0.2
 
 	playerInitialVerticalSpeed float32 = 6
@@ -40,18 +45,21 @@ const (
 type gameState struct {
 	screen gameScreen
 
+	assets assets
+
 	commonState commonState
 	ground      ground
 	platforms   platforms
 	player      player
 }
 
-func newGameState() *gameState {
+func newGameState(assets assets) *gameState {
 	return &gameState{
 		screen:    gameScreenGame,
+		assets:    assets,
 		ground:    newGround(),
 		platforms: newPlatforms(),
-		player:    newPlayer(),
+		player:    newPlayer(assets.player),
 	}
 }
 
@@ -66,13 +74,13 @@ const (
 
 func (gs *gameState) update() {
 	if rl.IsKeyPressed(rl.KeyR) || (gs.screen == gameScreenGameOver && rl.IsKeyPressed(rl.KeySpace)) {
-		*gs = *newGameState()
+		*gs = *newGameState(gs.assets)
 		return
 	}
 
 	gs.commonState.update()
 	gs.ground.update(gs.commonState)
-	gs.platforms.updatePlatforms(gs.commonState, gs.ground.border)
+	gs.platforms.updatePlatforms(gs.commonState, gs.ground.border, gs.player.border.Height)
 	gs.player.update(gs.commonState, gs.ground.border, gs.platforms.borders, gs.ground.holes.borders)
 	if gs.player.dead {
 		gs.screen = gameScreenGameOver
@@ -192,7 +200,7 @@ func newPlatforms() platforms {
 	}
 }
 
-func (p *platforms) updatePlatforms(cs commonState, groundBorders rl.Rectangle) {
+func (p *platforms) updatePlatforms(cs commonState, groundBorders rl.Rectangle, playerHeight float32) {
 	p.spawnTimer += cs.dt
 
 	for i := range p.borders {
@@ -209,7 +217,6 @@ func (p *platforms) updatePlatforms(cs commonState, groundBorders rl.Rectangle) 
 			platformWidth := random.Float32(platformMinWidth, platformMaxWidth)
 
 			playerMaxJumpHeight := cs.screenHeight * playerMaxJumpHeightScreenPercent
-			playerHeight := cs.screenHeight * playerHeightScreenPercent
 			platformHeight := cs.screenHeight * platformHeightScreenPercent
 
 			platformYFrom := groundBorders.Y - playerMaxJumpHeight + platformHeight
@@ -239,11 +246,15 @@ type player struct {
 	onPlatform bool
 	border     rl.Rectangle
 	dead       bool
+
+	// assets
+	assets playerAssets
 }
 
-func newPlayer() player {
+func newPlayer(assets playerAssets) player {
 	return player{
 		verticalSpeed: playerInitialVerticalSpeed,
+		assets:        assets,
 	}
 }
 
@@ -264,12 +275,12 @@ func (p *player) update(cs commonState, groundBorders rl.Rectangle, platformBord
 }
 
 func (p *player) updateBorder(cs commonState, groundBorders rl.Rectangle) {
-	playerHeight := cs.screenHeight * playerHeightScreenPercent
+	playerHeight := float32(p.assets.shapes.body.Height)
 	playerLeftMargin := cs.screenWidth * playerLeftMarginScreenPercent
 	p.border = rl.Rectangle{
 		X:      playerLeftMargin,
 		Y:      groundBorders.Y - playerHeight - p.verticalPosition,
-		Width:  playerHeight,
+		Width:  float32(p.assets.shapes.body.Width),
 		Height: playerHeight,
 	}
 }
@@ -318,7 +329,13 @@ func (p *player) updateVerticalPosition(
 }
 
 func (p *player) draw() {
-	rl.DrawRectangleRec(p.border, rl.Yellow)
+	rl.DrawTexture(p.assets.shapes.body, int32(p.border.X), int32(p.border.Y), rl.White)
+	faceTexture := p.assets.shapes.runningFace
+	if p.jumping {
+		faceTexture = p.assets.shapes.midAirFace
+	}
+	faceX := (int32(p.border.X) + faceTexture.Width/2)
+	rl.DrawTexture(faceTexture, int32(faceX), int32(p.border.Y), rl.White)
 }
 
 func (gs *gameState) drawGameOver() {
