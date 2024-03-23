@@ -15,7 +15,7 @@ import (
 
 const (
 	holeSpawnRate float32 = 3
-	holeSpeed     float32 = 600
+	holeSpeed     float32 = 400
 	maxHoleCount  int     = 10
 
 	holeMinWidth = 200
@@ -35,7 +35,7 @@ const (
 	playerMaxJumpHeightScreenPercent float32 = 0.2
 	playerLeftMarginScreenPercent    float32 = 0.2
 
-	playerInitialVerticalSpeed float32 = holeSpeed
+	playerInitialVerticalSpeed float32 = holeSpeed - 100
 )
 
 const (
@@ -229,7 +229,7 @@ func (h *holes) updateHoles(cs commonState, groundBorders rl.Rectangle) {
 
 func (h *holes) draw() {
 	for i := range h.borders {
-		rl.DrawRectangleRec(h.borders[i], rl.Black)
+		rl.DrawRectangleRec(h.borders[i], rl.Gray)
 	}
 }
 
@@ -429,7 +429,7 @@ func (p *player) updateScore(collectibleBorders []rl.Rectangle) {
 
 func (p *player) updateDead(holeBorders []rl.Rectangle) {
 	if p.verticalPosition == 0 {
-		playerMiddle := (p.border.X + p.border.Width) / 2
+		playerMiddle := p.border.X + p.border.Width/2
 		for _, holeBorder := range holeBorders {
 			if rlutils.VerticalCollision(p.border, holeBorder) &&
 				// player is inside the hole more than half

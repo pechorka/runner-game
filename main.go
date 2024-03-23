@@ -8,7 +8,7 @@ func main() {
 	rl.SetConfigFlags(rl.FlagWindowResizable)
 	const factor = 100
 	rl.InitWindow(16*factor, 9*factor, "Bread game jam")
-	rl.SetTargetFPS(60)
+	rl.SetTargetFPS(240)
 
 	rl.InitAudioDevice()
 
