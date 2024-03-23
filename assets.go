@@ -1,8 +1,14 @@
 package main
 
 import (
+	"embed"
+	"strings"
+
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
+
+//go:embed assets
+var assetsFs embed.FS
 
 type assets struct {
 	player       playerAssets
@@ -52,13 +58,13 @@ func loadAssets() assets {
 
 	a.collectibles.ingredient = a.loadTexture("assets/collectibles/tile_coin.png")
 
-	a.music = rl.LoadMusicStream("assets/music/I Got a Stick Arr Bryan Teoh.mp3")
+	a.music = loadMusicStream("assets/music/I Got a Stick Arr Bryan Teoh.mp3")
 
 	return a
 }
 
 func (a *assets) loadTexture(path string) rl.Texture2D {
-	t := rl.LoadTexture(path)
+	t := loadTextureFromImage(path)
 	a.allTextures = append(a.allTextures, t)
 	return t
 }
@@ -68,4 +74,28 @@ func (a *assets) unload() {
 		rl.UnloadTexture(t)
 	}
 	rl.UnloadMusicStream(a.music)
+}
+
+func loadTextureFromImage(imgPath string) rl.Texture2D {
+	file, err := assetsFs.ReadFile(imgPath)
+	if err != nil {
+		panic(err)
+	}
+	fileExtention := imgPath[strings.LastIndexByte(imgPath, '.'):]
+	img := rl.LoadImageFromMemory(fileExtention, file, int32(len(file)))
+	defer rl.UnloadImage(img)
+	texture := rl.LoadTextureFromImage(img)
+
+	return texture
+}
+
+func loadMusicStream(musicPath string) rl.Music {
+	file, err := assetsFs.ReadFile(musicPath)
+	if err != nil {
+		panic(err)
+	}
+	fileExtention := musicPath[strings.LastIndexByte(musicPath, '.'):]
+	music := rl.LoadMusicStreamFromMemory(fileExtention, file, int32(len(file)))
+
+	return music
 }
