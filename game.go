@@ -57,6 +57,7 @@ type gameState struct {
 	player       player
 
 	musicPlaying bool
+	paused       bool
 }
 
 func newGameState(assets assets) *gameState {
@@ -84,6 +85,11 @@ func (gs *gameState) update() {
 		*gs = *newGameState(gs.assets)
 		return
 	}
+	if rl.IsKeyPressed(rl.KeyP) {
+		gs.paused = !gs.paused
+	}
+
+	gs.commonState.update()
 
 	switch gs.screen {
 	case gameScreenMenu:
@@ -95,7 +101,14 @@ func (gs *gameState) update() {
 		} else {
 			rl.UpdateMusicStream(gs.assets.music)
 		}
-		gs.commonState.update()
+		if gs.paused {
+			pausedText := "Paused"
+			textWidth := rl.MeasureText(pausedText, 60)
+			pausedTextX := int32(gs.commonState.screenWidth/2) - textWidth/2
+			pausedTextY := int32(gs.commonState.screenHeight / 2)
+			rl.DrawText(pausedText, pausedTextX, pausedTextY, 60, rl.Black)
+			return
+		}
 		gs.ground.update(gs.commonState)
 		gs.platforms.updatePlatforms(gs.commonState, gs.ground.border, gs.player.border.Height)
 		gs.collectibles.updateCollectibles(gs.commonState, gs.ground.border)
