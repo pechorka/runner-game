@@ -26,3 +26,10 @@ func VerticalCollision(r, in rl.Rectangle) bool {
 
 	return false
 }
+
+func SetToZero(r *rl.Rectangle) {
+	r.X = 0
+	r.Y = 0
+	r.Width = 0
+	r.Height = 0
+}

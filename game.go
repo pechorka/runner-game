@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strconv"
+
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/pechorka/bread-game-jam/pkg/random"
 	"github.com/pechorka/bread-game-jam/pkg/rlutils"
@@ -37,24 +39,32 @@ const (
 	playerInitialVerticalSpeed float32 = 6
 )
 
+const (
+	maxCollectibleCount  = 40
+	collectibleSpeed     = platformSpeed
+	collectibleSpawnRate = 0.5
+)
+
 type gameState struct {
 	screen gameScreen
 
 	assets assets
 
-	commonState commonState
-	ground      ground
-	platforms   platforms
-	player      player
+	commonState  commonState
+	ground       ground
+	platforms    platforms
+	collectibles collectibles
+	player       player
 }
 
 func newGameState(assets assets) *gameState {
 	return &gameState{
-		screen:    gameScreenGame,
-		assets:    assets,
-		ground:    newGround(assets.ground),
-		platforms: newPlatforms(assets.platform),
-		player:    newPlayer(assets.player),
+		screen:       gameScreenGame,
+		assets:       assets,
+		ground:       newGround(assets.ground),
+		platforms:    newPlatforms(assets.platform),
+		collectibles: newCollectibles(assets.collectibles),
+		player:       newPlayer(assets.player),
 	}
 }
 
@@ -73,12 +83,22 @@ func (gs *gameState) update() {
 		return
 	}
 
-	gs.commonState.update()
-	gs.ground.update(gs.commonState)
-	gs.platforms.updatePlatforms(gs.commonState, gs.ground.border, gs.player.border.Height)
-	gs.player.update(gs.commonState, gs.ground.border, gs.platforms.borders, gs.ground.holes.borders)
-	if gs.player.dead {
-		gs.screen = gameScreenGameOver
+	switch gs.screen {
+	case gameScreenMenu:
+		panic("not implemented")
+	case gameScreenGame:
+		gs.commonState.update()
+		gs.ground.update(gs.commonState)
+		gs.platforms.updatePlatforms(gs.commonState, gs.ground.border, gs.player.border.Height)
+		gs.collectibles.updateCollectibles(gs.commonState, gs.ground.border)
+		gs.player.update(gs.commonState, gs.ground.border, gs.platforms.borders, gs.ground.holes.borders, gs.collectibles.borders)
+		if gs.player.dead {
+			gs.screen = gameScreenGameOver
+		}
+	case gameScreenGameOver:
+		// do nothing
+	case gameScreenWin:
+		panic("not implemented")
 	}
 }
 
@@ -87,12 +107,17 @@ func (gs *gameState) draw() {
 
 	rl.DrawFPS(10, 10)
 
+	scoreText := "Score: " + strconv.Itoa(gs.player.score)
+	scoreTextWidth := rl.MeasureText(scoreText, 20)
+	rl.DrawText(scoreText, int32(gs.commonState.screenWidth)-scoreTextWidth-10, 10, 20, rl.Black)
+
 	switch gs.screen {
 	case gameScreenMenu:
 		panic("not implemented")
 	case gameScreenGame:
 		gs.ground.draw()
 		gs.platforms.draw()
+		gs.collectibles.draw()
 		gs.player.draw()
 	case gameScreenGameOver:
 		gs.drawGameOver()
@@ -250,6 +275,48 @@ func (p *platforms) draw() {
 	}
 }
 
+type collectibles struct {
+	spawnTimer float32
+	borders    []rl.Rectangle
+
+	collectibleAssets collectibleAssets
+}
+
+func newCollectibles(assets collectibleAssets) collectibles {
+	return collectibles{
+		borders:           make([]rl.Rectangle, maxCollectibleCount),
+		collectibleAssets: assets,
+	}
+}
+
+func (c *collectibles) updateCollectibles(cs commonState, groundBorders rl.Rectangle) {
+	c.spawnTimer += cs.dt
+
+	for i := range c.borders {
+		collectibleBorder := &c.borders[i]
+		collectibleBorder.X -= collectibleSpeed
+
+		collectibleNotVisible := collectibleBorder.X+collectibleBorder.Width < 0
+
+		if collectibleNotVisible && c.spawnTimer >= collectibleSpawnRate {
+			c.spawnTimer = 0
+
+			collectibleWidth := float32(c.collectibleAssets.ingredient.Width)
+			collectibleHeigth := float32(c.collectibleAssets.ingredient.Height)
+			collectibleBorder.X = cs.screenWidth + collectibleWidth
+			collectibleBorder.Y = groundBorders.Y - collectibleHeigth
+			collectibleBorder.Width = collectibleWidth
+			collectibleBorder.Height = collectibleHeigth
+		}
+	}
+}
+
+func (c *collectibles) draw() {
+	for i := range c.borders {
+		rl.DrawTexture(c.collectibleAssets.ingredient, int32(c.borders[i].X), int32(c.borders[i].Y), rl.White)
+	}
+}
+
 type player struct {
 	verticalPosition float32
 	verticalSpeed    float32
@@ -259,6 +326,8 @@ type player struct {
 	onPlatform bool
 	border     rl.Rectangle
 	dead       bool
+
+	score int
 
 	// assets
 	assets playerAssets
@@ -271,20 +340,11 @@ func newPlayer(assets playerAssets) player {
 	}
 }
 
-func (p *player) update(cs commonState, groundBorders rl.Rectangle, platformBorders, holeBorders []rl.Rectangle) {
+func (p *player) update(cs commonState, groundBorders rl.Rectangle, platformBorders, holeBorders, collectibleBorders []rl.Rectangle) {
 	p.updateBorder(cs, groundBorders)
 	p.updateVerticalPosition(cs, platformBorders)
-	if p.verticalPosition == 0 {
-		playerMiddle := (p.border.X + p.border.Width) / 2
-		for _, holeBorder := range holeBorders {
-			if rlutils.VerticalCollision(p.border, holeBorder) &&
-				// player is inside the hole more than half
-				(holeBorder.X <= playerMiddle && playerMiddle <= holeBorder.X+holeBorder.Width) {
-				p.dead = true
-				break
-			}
-		}
-	}
+	p.updateScore(collectibleBorders)
+	p.updateDead(holeBorders)
 }
 
 func (p *player) updateBorder(cs commonState, groundBorders rl.Rectangle) {
@@ -338,6 +398,29 @@ func (p *player) updateVerticalPosition(
 	// player reached max jump height -> start descending
 	if p.jumping && p.verticalPosition >= maxJumpHeight {
 		p.jumping = false
+	}
+}
+
+func (p *player) updateScore(collectibleBorders []rl.Rectangle) {
+	for i := range collectibleBorders {
+		if rl.CheckCollisionRecs(p.border, collectibleBorders[i]) {
+			p.score++
+			rlutils.SetToZero(&collectibleBorders[i])
+		}
+	}
+}
+
+func (p *player) updateDead(holeBorders []rl.Rectangle) {
+	if p.verticalPosition == 0 {
+		playerMiddle := (p.border.X + p.border.Width) / 2
+		for _, holeBorder := range holeBorders {
+			if rlutils.VerticalCollision(p.border, holeBorder) &&
+				// player is inside the hole more than half
+				(holeBorder.X <= playerMiddle && playerMiddle <= holeBorder.X+holeBorder.Width) {
+				p.dead = true
+				break
+			}
+		}
 	}
 }
 

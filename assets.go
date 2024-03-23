@@ -5,9 +5,10 @@ import (
 )
 
 type assets struct {
-	player   playerAssets
-	ground   groundAssets
-	platform platformAssets
+	player       playerAssets
+	ground       groundAssets
+	platform     platformAssets
+	collectibles collectibleAssets
 
 	allTextures []rl.Texture2D
 }
@@ -30,6 +31,10 @@ type platformAssets struct {
 	right  rl.Texture2D
 }
 
+type collectibleAssets struct {
+	ingredient rl.Texture2D
+}
+
 func loadAssets() assets {
 	a := assets{}
 
@@ -42,6 +47,8 @@ func loadAssets() assets {
 	a.platform.left = a.loadTexture("assets/platform/tile_half_left.png")
 	a.platform.center = a.loadTexture("assets/platform/tile_half_center.png")
 	a.platform.right = a.loadTexture("assets/platform/tile_half_right.png")
+
+	a.collectibles.ingredient = a.loadTexture("assets/collectibles/tile_coin.png")
 
 	return a
 }
