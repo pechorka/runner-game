@@ -13,10 +13,6 @@ import (
 // TODO: add animated assets for player and enemy and ingredients
 
 const (
-	groundHeightPercent float32 = 0.2
-)
-
-const (
 	holeSpawnRate float32 = 1
 	holeSpeed     float32 = 10
 	maxHoleCount  int     = 10
@@ -30,7 +26,6 @@ const (
 	platformSpeed     float32 = 10
 	maxPlatformCount  int     = 10
 
-	platformHeightScreenPercent    float32 = 0.02
 	platformWidthScreenPercentFrom float32 = 0.2
 	platformWidthScreenPercentTo   float32 = 0.3
 )
@@ -57,8 +52,8 @@ func newGameState(assets assets) *gameState {
 	return &gameState{
 		screen:    gameScreenGame,
 		assets:    assets,
-		ground:    newGround(),
-		platforms: newPlatforms(),
+		ground:    newGround(assets.ground),
+		platforms: newPlatforms(assets.platform),
 		player:    newPlayer(assets.player),
 	}
 }
@@ -119,12 +114,14 @@ func (cs *commonState) update() {
 
 type ground struct {
 	border rl.Rectangle
+	assets groundAssets
 	holes  holes
 }
 
-func newGround() ground {
+func newGround(assets groundAssets) ground {
 	return ground{
-		holes: newHoles(),
+		assets: assets,
+		holes:  newHoles(),
 	}
 }
 
@@ -134,7 +131,7 @@ func (g *ground) update(cs commonState) {
 }
 
 func (g *ground) updateBorders(cs commonState) {
-	groundHeight := cs.screenHeight * groundHeightPercent
+	groundHeight := float32(g.assets.center.Height)
 	g.border = rl.Rectangle{
 		X:      0,
 		Y:      cs.screenHeight - groundHeight,
@@ -144,7 +141,10 @@ func (g *ground) updateBorders(cs commonState) {
 }
 
 func (g *ground) draw() {
-	rl.DrawRectangleRec(g.border, rl.Brown)
+	for x := int32(0); x < int32(g.border.Width); x += int32(g.assets.center.Width) {
+		rl.DrawTexture(g.assets.center, x, int32(g.border.Y), rl.White)
+	}
+
 	g.holes.draw()
 }
 
@@ -192,11 +192,14 @@ func (h *holes) draw() {
 type platforms struct {
 	spawnTimer float32
 	borders    []rl.Rectangle
+
+	assets platformAssets
 }
 
-func newPlatforms() platforms {
+func newPlatforms(assets platformAssets) platforms {
 	return platforms{
 		borders: make([]rl.Rectangle, maxPlatformCount),
+		assets:  assets,
 	}
 }
 
@@ -217,7 +220,7 @@ func (p *platforms) updatePlatforms(cs commonState, groundBorders rl.Rectangle, 
 			platformWidth := random.Float32(platformMinWidth, platformMaxWidth)
 
 			playerMaxJumpHeight := cs.screenHeight * playerMaxJumpHeightScreenPercent
-			platformHeight := cs.screenHeight * platformHeightScreenPercent
+			platformHeight := float32(p.assets.left.Height)
 
 			platformYFrom := groundBorders.Y - playerMaxJumpHeight + platformHeight
 			platformYTo := groundBorders.Y - platformHeight - playerHeight
@@ -233,7 +236,17 @@ func (p *platforms) updatePlatforms(cs commonState, groundBorders rl.Rectangle, 
 
 func (p *platforms) draw() {
 	for i := range p.borders {
-		rl.DrawRectangleRec(p.borders[i], rl.Gray)
+		borderX := int32(p.borders[i].X)
+		borderY := int32(p.borders[i].Y)
+		// left
+		rl.DrawTexture(p.assets.left, borderX, borderY, rl.White)
+		// center
+		borderLen := borderX + int32(p.borders[i].Width)
+		for x := borderX + p.assets.left.Width; x < borderLen-p.assets.right.Width; x += p.assets.center.Width {
+			rl.DrawTexture(p.assets.center, x, borderY, rl.White)
+		}
+		// right
+		rl.DrawTexture(p.assets.right, borderLen-p.assets.right.Width, borderY, rl.White)
 	}
 }
 
