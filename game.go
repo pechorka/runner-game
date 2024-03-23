@@ -8,10 +8,9 @@ import (
 	"github.com/pechorka/bread-game-jam/pkg/rlutils"
 )
 
-// TODO: spawn ingredients on platforms and ground
-// TODO: score
+// TODO: spawn ingredients on platforms
 // TODO: enemy. More frequent attacks on higher score (more ingredients)
-// TODO: add sounds and music
+// TODO: add sounds for death and collecting ingredients
 // TODO: add animated assets for player and enemy and ingredients
 
 const (
